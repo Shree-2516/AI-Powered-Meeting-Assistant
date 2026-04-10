@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meeting Notes AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+  <div class="page-wrapper">
+
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-icon">M</div>
+          <span class="logo-text">Meeting Notes AI</span>
+        </div>
+        <span class="badge-mode">Local Mode</span>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <div class="hero">
+        <h1 class="hero-title">Turn meetings into insights</h1>
+        <p class="hero-sub">Upload your meeting audio and get a full summary, key points, action items, sentiment and topics — instantly.</p>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-error">
+        <span class="alert-icon">!</span>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <div class="upload-card">
+        <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
+
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p class="drop-title">Drag & drop your audio file</p>
+            <p class="drop-sub">or click to browse</p>
+            <input type="file" name="audio" id="audioInput" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" required />
+          </div>
+
+          <div class="file-info" id="fileInfo" style="display:none;">
+            <div class="file-info-inner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="16" r="3"/>
+              </svg>
+              <span id="fileName">No file</span>
+              <button type="button" class="btn-clear" id="clearFile">✕</button>
+            </div>
+          </div>
+
+          <div class="format-tags">
+            <span class="tag">WAV</span>
+            <span class="tag">MP3</span>
+            <span class="tag">M4A</span>
+            <span class="tag">OGG</span>
+            <span class="tag">FLAC</span>
+            <span class="tag">WEBM</span>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <span id="btnText">Analyse Meeting</span>
+            <span id="btnLoader" style="display:none;">Processing...</span>
+          </button>
+
+        </form>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon teal">T</div>
+          <div>
+            <p class="feature-title">Transcription</p>
+            <p class="feature-desc">Full speech-to-text via Whisper</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">S</div>
+          <div>
+            <p class="feature-title">Summary</p>
+            <p class="feature-desc">Concise meeting summary</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon blue">K</div>
+          <div>
+            <p class="feature-title">Key Points</p>
+            <p class="feature-desc">Top takeaways extracted</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon amber">A</div>
+          <div>
+            <p class="feature-title">Action Items</p>
+            <p class="feature-desc">Tasks & follow-ups detected</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon coral">S</div>
+          <div>
+            <p class="feature-title">Sentiment</p>
+            <p class="feature-desc">Meeting tone analysis</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon green">T</div>
+          <div>
+            <p class="feature-title">Topics</p>
+            <p class="feature-desc">Main subjects covered</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p>Meeting Notes AI &mdash; Powered by Whisper + HuggingFace &mdash; Runs 100% locally</p>
+    </footer>
+
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p class="loading-title">Analysing your meeting...</p>
+      <p class="loading-sub">This may take 1–3 minutes depending on audio length</p>
+      <div class="loading-steps">
+        <div class="step active" id="step1">Transcribing audio</div>
+        <div class="step" id="step2">Generating summary</div>
+        <div class="step" id="step3">Extracting insights</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

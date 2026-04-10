@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meeting Results — {{ data.meetingId }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+  <div class="page-wrapper">
+
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-icon">M</div>
+          <span class="logo-text">Meeting Notes AI</span>
+        </div>
+        <div class="header-right">
+          <span class="badge-id">ID: {{ data.meetingId }}</span>
+          <span class="badge-mode">{{ data.mode | upper }} mode</span>
+          <a href="/" class="btn-back">New Meeting</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <div class="result-hero">
+        <h1 class="hero-title">Meeting Analysis Complete</h1>
+        <p class="hero-sub">Here are your insights from this meeting.</p>
+      </div>
+
+      <!-- Sentiment Banner -->
+      {% set s = data.sentiment %}
+      <div class="sentiment-banner sentiment-{{ s.label | lower }}">
+        <div class="sentiment-left">
+          <span class="sentiment-label">{{ s.label }}</span>
+          <span class="sentiment-tone">{{ s.tone }}</span>
+        </div>
+        <div class="sentiment-score-wrap">
+          <div class="sentiment-bar-bg">
+            <div class="sentiment-bar" style="width: {{ (s.score * 100) | int }}%;"></div>
+          </div>
+          <span class="sentiment-score-num">{{ (s.score * 100) | int }}%</span>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-num">{{ data.transcription.split()|length }}</span>
+          <span class="stat-label">Words spoken</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">{{ data.keyPoints | length }}</span>
+          <span class="stat-label">Key points</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">{{ data.actionItems | length }}</span>
+          <span class="stat-label">Action items</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">{{ data.topics | length }}</span>
+          <span class="stat-label">Topics found</span>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="results-grid">
+
+        <!-- Summary -->
+        <div class="result-card full-width">
+          <div class="card-header">
+            <div class="card-icon teal">S</div>
+            <h2 class="card-title">Summary</h2>
+          </div>
+          <p class="card-body-text">{{ data.summary }}</p>
+        </div>
+
+        <!-- Key Points -->
+        <div class="result-card">
+          <div class="card-header">
+            <div class="card-icon blue">K</div>
+            <h2 class="card-title">Key Points</h2>
+          </div>
+          {% if data.keyPoints %}
+          <ul class="insight-list">
+            {% for point in data.keyPoints %}
+            <li class="insight-item">
+              <span class="insight-dot blue-dot"></span>
+              <span>{{ point }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="empty-msg">No key points extracted.</p>
+          {% endif %}
+        </div>
+
+        <!-- Action Items -->
+        <div class="result-card">
+          <div class="card-header">
+            <div class="card-icon amber">A</div>
+            <h2 class="card-title">Action Items</h2>
+          </div>
+          {% if data.actionItems %}
+          <ul class="insight-list">
+            {% for item in data.actionItems %}
+            <li class="insight-item">
+              <span class="insight-dot amber-dot"></span>
+              <span>{{ item }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="empty-msg">No action items detected.</p>
+          {% endif %}
+        </div>
+
+        <!-- Topics -->
+        <div class="result-card">
+          <div class="card-header">
+            <div class="card-icon green">T</div>
+            <h2 class="card-title">Topics Covered</h2>
+          </div>
+          {% if data.topics %}
+          <div class="topics-wrap">
+            {% for topic in data.topics %}
+            <span class="topic-pill">{{ topic }}</span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="empty-msg">No topics found.</p>
+          {% endif %}
+        </div>
+
+        <!-- Transcription -->
+        <div class="result-card full-width">
+          <div class="card-header">
+            <div class="card-icon purple">T</div>
+            <h2 class="card-title">Full Transcription</h2>
+            <button class="btn-copy" onclick="copyText('transcription-text', this)">Copy</button>
+          </div>
+          <div class="transcription-box" id="transcription-text">{{ data.transcription }}</div>
+        </div>
+
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn-secondary" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn-secondary" onclick="copyAllInsights()">Copy All Insights</button>
+        <a href="/" class="btn-primary">Analyse Another Meeting</a>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p>Meeting Notes AI &mdash; Powered by Whisper + HuggingFace &mdash; Runs 100% locally</p>
+    </footer>
+
+  </div>
+
+  <script>
+    function copyText(elementId, btn) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy", 2000);
+      });
+    }
+
+    function copyAllInsights() {
+      const summary = document.querySelector('.card-body-text')?.innerText || '';
+      const points = [...document.querySelectorAll('.insight-item span:last-child')].map(e => '• ' + e.innerText).join('\n');
+      const full = `MEETING SUMMARY\n${summary}\n\nKEY POINTS\n${points}`;
+      navigator.clipboard.writeText(full).then(() => alert('Insights copied to clipboard!'));
+    }
+  </script>
+
+</body>
+</html>
