@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 import nltk
 
-# Download required NLTK data on startup
 def download_nltk_data():
     packages = ["punkt", "punkt_tab", "stopwords", "averaged_perceptron_tagger"]
     for pkg in packages:
@@ -21,7 +20,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow all origins (adjust in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,4 +35,11 @@ def health_check():
     return {"status": "running", "message": "Meeting Notes AI Backend is live"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        timeout_keep_alive=1800,    # 30 min
+        h11_max_incomplete_event_size=200 * 1024 * 1024  # 200 MB
+    )

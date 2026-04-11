@@ -396,3 +396,8 @@ body {
   body { background: #fff; }
   .result-card { break-inside: avoid; }
 }
+.alert-warning {
+  background: #faeeda;
+  border: 1px solid #ef9f27;
+  color: #633806;
+}

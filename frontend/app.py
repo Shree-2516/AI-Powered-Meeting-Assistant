@@ -22,7 +22,7 @@ def upload():
 
     try:
         files = {"audio": (audio_file.filename, audio_file.read(), audio_file.content_type)}
-        response = requests.post(f"{BACKEND_URL}/api/process-meeting", files=files, timeout=300)
+        response = requests.post(f"{BACKEND_URL}/api/process-meeting", files=files, timeout=1800)
 
         if response.status_code == 200:
             data = response.json()
