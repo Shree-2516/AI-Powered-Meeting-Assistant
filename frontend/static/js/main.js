@@ -62,12 +62,20 @@ if (uploadForm) {
     if (!audioInput.files || audioInput.files.length === 0) return;
 
     const fileSizeMB = audioInput.files[0].size / 1024 / 1024;
-    const estMinutes = Math.max(2, Math.ceil(fileSizeMB / 5));
+    let estMinutes;
+
+    if (window.PREFERRED_STT === 'groq') {
+      estMinutes = Math.max(1, Math.ceil(fileSizeMB / 10));
+    } else if (window.PREFERRED_STT === 'openai') {
+      estMinutes = Math.max(2, Math.ceil(fileSizeMB / 5));
+    } else {
+      estMinutes = Math.max(3, Math.ceil(fileSizeMB / 2));
+    }
 
     // Update loading subtitle with estimate
     const loadingSub = document.querySelector('.loading-sub');
     if (loadingSub) {
-      loadingSub.textContent = `Estimated time: ${estMinutes}–${estMinutes + 3} minutes. Please keep this tab open.`;
+      loadingSub.textContent = `Estimated time: ${estMinutes}–${estMinutes + 3} minutes based on the selected backend. Please keep this tab open.`;
     }
 
     submitBtn.disabled = true;
@@ -76,7 +84,7 @@ if (uploadForm) {
     loadingOverlay.classList.add('active');
 
     // Step timings based on file size
-    const step1Delay = Math.max(30000, fileSizeMB * 3000);
+    const step1Delay = Math.max(10000, fileSizeMB * (window.PREFERRED_STT === 'groq' ? 1500 : 3000));
     const step2Delay = step1Delay + 20000;
 
     setTimeout(() => activateStep('step2'), step1Delay);

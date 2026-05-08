@@ -16,7 +16,7 @@
           <div class="logo-icon">M</div>
           <span class="logo-text">Meeting Notes AI</span>
         </div>
-        <span class="badge-mode">Local Mode</span>
+        <span class="badge-mode">Backend: {{ preferred_backend }}</span>
       </div>
     </header>
 
@@ -25,6 +25,7 @@
       <div class="hero">
         <h1 class="hero-title">Turn meetings into insights</h1>
         <p class="hero-sub">Upload your meeting audio and get a full summary, key points, action items, sentiment and topics — instantly.</p>
+        <p class="hero-note">Preferred transcription Groqe.</p>
       </div>
 
       {% if error %}
@@ -136,7 +137,7 @@
     </main>
 
     <footer class="footer">
-      <p>Meeting Notes AI &mdash; Powered by Whisper + HuggingFace &mdash; Runs 100% locally</p>
+      <p>Meeting Notes AI &mdash; Hybrid local + cloud models. Preferred backend: {{ preferred_backend }}.</p>
     </footer>
 
   </div>
@@ -145,7 +146,7 @@
     <div class="loading-box">
       <div class="spinner"></div>
       <p class="loading-title">Analysing your meeting...</p>
-      <p class="loading-sub">This may take 1–3 minutes depending on audio length</p>
+      <p class="loading-sub">This may take a few minutes depending on file size and selected backend.</p>
       <div class="loading-steps">
         <div class="step active" id="step1">Transcribing audio</div>
         <div class="step" id="step2">Generating summary</div>
@@ -154,6 +155,9 @@
     </div>
   </div>
 
+  <script>
+    window.PREFERRED_STT = "{{ preferred_stt }}";
+  </script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

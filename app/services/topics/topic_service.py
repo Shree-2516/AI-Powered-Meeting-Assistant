@@ -1,88 +1,144 @@
 import re
 import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
+from collections import Counter
 import numpy as np
+
+
+# Curated topic seed phrases — these map raw keywords to clean topic labels
+TOPIC_MAP = {
+    'replac': 'Job Automation & Replacement',
+    'job': 'Future of Jobs',
+    'work': 'Future of Work',
+    'artificial intelligence': 'Artificial Intelligence',
+    'human': 'Human vs AI Capability',
+    'emotion': 'AI Emotions & Empathy',
+    'feel': 'AI Emotions & Empathy',
+    'symbiotic': 'Human-AI Collaboration',
+    'collaborat': 'Human-AI Collaboration',
+    'ethical': 'AI Ethics & Governance',
+    'framework': 'AI Ethics & Governance',
+    'law': 'AI Regulation & Policy',
+    'regulation': 'AI Regulation & Policy',
+    'revolution': 'Industrial Revolution Analogy',
+    'industrial': 'Industrial Revolution Analogy',
+    'skill': 'Human Skill Development',
+    'upskill': 'Human Skill Development',
+    'creativ': 'Human Creativity',
+    'brain': 'AI vs Human Intelligence',
+    'neural': 'Neural Technology',
+    'robot': 'Robotics',
+    'data': 'AI Data & Learning',
+    'develop': 'AI Development',
+    'future': 'Future Predictions',
+    'evolution': 'Technology Evolution',
+    'automat': 'Job Automation & Replacement',
+    'machine': 'Machine Learning',
+    'labor': 'Labor & Employment',
+    'capacit': 'AI Capability',
+}
+
 
 def extract(text: str, num_topics: int = 8) -> list[str]:
     """
-    Extract main topics from text using TF-IDF.
-    Returns top N topic keywords.
+    Extract meaningful topic phrases — not random single words.
+    Uses keyword matching against curated topic map first,
+    then falls back to TF-IDF bigrams.
     """
     if not text or len(text.strip()) < 30:
         return []
 
-    # Clean text
-    clean = _clean_text(text)
+    # Step 1: Curated topic detection (highest quality)
+    curated = _extract_curated_topics(text)
 
+    # Step 2: TF-IDF bigram topics (fills remaining slots)
+    tfidf_topics = _extract_tfidf_topics(text, num_topics * 2)
+
+    # Merge: curated first, then TF-IDF for extras
+    final = list(curated)
+    for t in tfidf_topics:
+        if t not in final and len(final) < num_topics:
+            final.append(t)
+
+    return final[:num_topics]
+
+
+def _extract_curated_topics(text: str) -> list[str]:
+    """Match text against known topic keywords."""
+    text_lower = text.lower()
+    found = []
+    seen_labels = set()
+
+    for keyword, label in TOPIC_MAP.items():
+        if label not in seen_labels and keyword in text_lower:
+            found.append(label)
+            seen_labels.add(label)
+
+    return found
+
+
+def _extract_tfidf_topics(text: str, num: int) -> list[str]:
+    """Extract important bigram/trigram phrases using TF-IDF."""
     try:
         stop_words = list(stopwords.words("english"))
-    except LookupError:
-        nltk.download("stopwords", quiet=True)
+    except Exception:
+        nltk.download('stopwords', quiet=True)
         stop_words = list(stopwords.words("english"))
 
-    # Add meeting-specific stop words
-    meeting_stops = [
-        "yeah", "okay", "right", "like", "think", "know",
-        "going", "said", "thing", "people", "time", "way",
-        "um", "uh", "hmm", "actually", "basically", "kind"
+    extra_stops = [
+        'uh', 'um', 'yeah', 'okay', 'like', 'also', 'think',
+        'know', 'going', 'thing', 'people', 'right', 'even',
+        'would', 'could', 'said', 'say', 'see', 'get', 'one',
+        'will', 'also', 'actually', 'basically', 'really', 'just'
     ]
-    all_stops = stop_words + meeting_stops
+    all_stops = stop_words + extra_stops
 
     try:
-        # Use TF-IDF on the full text treated as one document
-        # Split into sentences as mini-documents for better scoring
-        from nltk.tokenize import sent_tokenize
-        sentences = sent_tokenize(clean)
-        
+        try:
+            sentences = sent_tokenize(text)
+        except Exception:
+            nltk.download('punkt_tab', quiet=True)
+            sentences = sent_tokenize(text)
+
         if len(sentences) < 2:
-            sentences = [clean]
+            sentences = [text]
 
         vectorizer = TfidfVectorizer(
             stop_words=all_stops,
-            ngram_range=(1, 2),   # single words + bigrams
-            max_features=100,
+            ngram_range=(2, 3),   # bigrams and trigrams only
+            max_features=80,
             min_df=1
         )
-        
-        tfidf_matrix = vectorizer.fit_transform(sentences)
-        feature_names = vectorizer.get_feature_names_out()
-        
-        # Sum scores across all sentences
-        scores = np.asarray(tfidf_matrix.sum(axis=0)).flatten()
-        
-        # Get top indices
-        top_indices = scores.argsort()[::-1][:num_topics]
-        topics = [feature_names[i].title() for i in top_indices]
-        
-        # Filter out single-char topics
-        topics = [t for t in topics if len(t) > 2]
-        
-        return topics[:num_topics]
+
+        matrix = vectorizer.fit_transform(sentences)
+        features = vectorizer.get_feature_names_out()
+        scores = np.asarray(matrix.sum(axis=0)).flatten()
+        top_indices = scores.argsort()[::-1][:num]
+
+        topics = []
+        for i in top_indices:
+            phrase = features[i].title()
+            # Filter: must be at least 2 words and meaningful length
+            if len(phrase.split()) >= 2 and len(phrase) > 5:
+                topics.append(phrase)
+
+        return topics[:num]
 
     except Exception as e:
-        print(f"[TopicService] TF-IDF failed: {e}. Falling back to frequency method.")
-        return _fallback_topics(clean, num_topics)
+        print(f"[TopicService] TF-IDF failed: {e}")
+        return _fallback_topics(text, num)
 
 
-def _clean_text(text: str) -> str:
-    """Remove filler words, lowercase, strip special chars."""
-    text = re.sub(r'[^\w\s]', ' ', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
-
-
-def _fallback_topics(text: str, num_topics: int) -> list[str]:
-    """Simple word frequency fallback."""
+def _fallback_topics(text: str, num: int) -> list[str]:
+    """Simple noun-phrase frequency fallback."""
     try:
         stop_words = set(stopwords.words("english"))
     except Exception:
         stop_words = set()
 
     words = word_tokenize(text.lower())
-    words = [w for w in words if w.isalpha() and len(w) > 3 and w not in stop_words]
-
-    from collections import Counter
+    words = [w for w in words if w.isalpha() and len(w) > 4 and w not in stop_words]
     freq = Counter(words)
-    return [w.title() for w, _ in freq.most_common(num_topics)]
+    return [w.title() for w, _ in freq.most_common(num)]

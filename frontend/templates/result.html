@@ -29,6 +29,7 @@
       <div class="result-hero">
         <h1 class="hero-title">Meeting Analysis Complete</h1>
         <p class="hero-sub">Here are your insights from this meeting.</p>
+        <p class="hero-note">Transcription model: Groq</p>
       </div>
 
       <!-- Sentiment Banner -->
@@ -40,7 +41,7 @@
         </div>
         <div class="sentiment-score-wrap">
           <div class="sentiment-bar-bg">
-            <div class="sentiment-bar" style="width: {{ (s.score * 100) | int }}%;"></div>
+            <div class="sentiment-bar" data-score="{{ (s.score * 100) | int }}"></div>
           </div>
           <span class="sentiment-score-num">{{ (s.score * 100) | int }}%</span>
         </div>
@@ -156,7 +157,7 @@
     </main>
 
     <footer class="footer">
-      <p>Meeting Notes AI &mdash; Powered by Whisper + HuggingFace &mdash; Runs 100% locally</p>
+      <p>Meeting Notes AI &mdash; Hybrid local + cloud models. Transcription used: {{ data.speechModel }}.</p>
     </footer>
 
   </div>
@@ -176,6 +177,14 @@
       const full = `MEETING SUMMARY\n${summary}\n\nKEY POINTS\n${points}`;
       navigator.clipboard.writeText(full).then(() => alert('Insights copied to clipboard!'));
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const bar = document.querySelector('.sentiment-bar[data-score]');
+      if (bar) {
+        const score = parseInt(bar.dataset.score, 10);
+        bar.style.width = `${Math.min(Math.max(score, 0), 100)}%`;
+      }
+    });
   </script>
 
 </body>

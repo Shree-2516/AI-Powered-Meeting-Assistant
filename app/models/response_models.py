@@ -8,11 +8,13 @@ class SentimentResult(BaseModel):
 
 class MeetingResponse(BaseModel):
     meetingId: str
-    mode: str            # "local" or "openai"
+    mode: str            # "local", "openai", or "groq"
     transcription: str
     summary: str
     keyPoints: List[str]
     actionItems: List[str]
     sentiment: SentimentResult
     topics: List[str]
+    speechModel: str
+    insightsModel: str
     error: Optional[str] = None
