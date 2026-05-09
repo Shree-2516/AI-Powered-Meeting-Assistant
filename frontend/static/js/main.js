@@ -66,8 +66,6 @@ if (uploadForm) {
 
     if (window.PREFERRED_STT === 'groq') {
       estMinutes = Math.max(1, Math.ceil(fileSizeMB / 10));
-    } else if (window.PREFERRED_STT === 'openai') {
-      estMinutes = Math.max(2, Math.ceil(fileSizeMB / 5));
     } else {
       estMinutes = Math.max(3, Math.ceil(fileSizeMB / 2));
     }

@@ -11,6 +11,11 @@ from app.services.topics import topic_service
 from app.services.cleaner import text_cleaner
 from app.services.insights import llm_insights
 from app.core.settings import settings
+from app.core.database import SessionLocal
+from app.models.db_models import MeetingRecord
+from app.services.embeddings import embedding_service
+from sqlalchemy import select, desc
+import json
 
 router = APIRouter()
 MAX_FILE_SIZE = 200 * 1024 * 1024
@@ -20,11 +25,11 @@ MAX_FILE_SIZE = 200 * 1024 * 1024
 def get_status():
     return {
         "status": "ok",
-        "mode": "openai" if settings.use_openai() else "local",
+        "mode": "groq" if settings.use_groq() else "local",
         "whisper_model": settings.WHISPER_MODEL,
         "summary_model": settings.SUMMARY_MODEL,
-        "openai_key_set": bool(settings.OPENAI_API_KEY),
-        "use_openai_flag": settings.USE_OPENAI,
+        "groq_key_set": bool(settings.GROQ_API_KEY),
+        "use_groq_flag": settings.USE_GROQ,
         "max_file_size_mb": 200,
     }
 
@@ -75,7 +80,6 @@ async def process_meeting(audio: UploadFile = File(...)):
 
         speech_model = {
             "groq": f"Groq {settings.GROQ_SPEECH_MODEL}",
-            "openai": "OpenAI Whisper",
             "local": f"Local Whisper ({settings.WHISPER_MODEL})"
         }.get(mode, "Local Whisper")
 
@@ -92,9 +96,9 @@ async def process_meeting(audio: UploadFile = File(...)):
         topics = None
         llm_result = None
 
-        # Try LLM first (OpenAI) — best quality
-        if settings.use_openai():
-            print(f"[Meeting {meeting_id}] Using OpenAI for all insights...")
+        # Try LLM first (Groq) — best quality
+        if settings.use_groq():
+            print(f"[Meeting {meeting_id}] Using Groq for all insights...")
             llm_result = llm_insights.generate(clean_text)
 
             if llm_result:
@@ -102,9 +106,9 @@ async def process_meeting(audio: UploadFile = File(...)):
                 key_points = llm_result.get("keyPoints", [])
                 action_items = llm_result.get("actionItems", [])
                 topics = llm_result.get("topics", [])
-                print(f"[Meeting {meeting_id}] LLM insights: OK")
+                print(f"[Meeting {meeting_id}] Groq insights: OK")
             else:
-                print(f"[Meeting {meeting_id}] LLM failed, falling back to local...")
+                print(f"[Meeting {meeting_id}] Groq failed, falling back to local...")
 
         # Local fallback (or if OpenAI not configured)
         if summary is None:
@@ -142,6 +146,33 @@ async def process_meeting(audio: UploadFile = File(...)):
 
         print(f"[Meeting {meeting_id}] ✅ Done!\n")
 
+        # ── Step 6: Save to Database (New) ────────────────
+        try:
+            print(f"[Meeting {meeting_id}] Saving to database...")
+            # Generate embedding for the summary for semantic search
+            vector = embedding_service.generate_embedding(summary or raw_transcription[:500])
+            
+            async with SessionLocal() as db:
+                db_record = MeetingRecord(
+                    meeting_id_short=meeting_id,
+                    transcription=raw_transcription,
+                    summary=summary,
+                    key_points=key_points,
+                    action_items=action_items,
+                    sentiment=sentiment.model_dump() if hasattr(sentiment, "model_dump") else sentiment.__dict__,
+                    topics=topics,
+                    mode=mode,
+                    speech_model=speech_model,
+                    insights_model=insights_model,
+                    summary_vector=vector
+                )
+                db.add(db_record)
+                await db.commit()
+                print(f"[Meeting {meeting_id}] DB: Saved successfully")
+        except Exception as db_e:
+            print(f"[Meeting {meeting_id}] DB Error: {db_e}")
+            # Don't fail the whole request if DB save fails, just log it
+
         return MeetingResponse(
             meetingId=meeting_id,
             mode=mode,
@@ -162,3 +193,62 @@ async def process_meeting(audio: UploadFile = File(...)):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+
+@router.get("/history")
+async def get_history(limit: int = 10):
+    """Fetch recent meeting history."""
+    try:
+        async with SessionLocal() as db:
+            result = await db.execute(
+                select(MeetingRecord)
+                .order_by(desc(MeetingRecord.created_at))
+                .limit(limit)
+            )
+            meetings = result.scalars().all()
+            return [
+                {
+                    "meetingId": m.meeting_id_short,
+                    "summary": m.summary,
+                    "topics": m.topics,
+                    "created_at": m.created_at.isoformat()
+                }
+                for m in meetings
+            ]
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return []
+
+
+@router.get("/search")
+async def search_meetings(query: str, limit: int = 5):
+    """Perform semantic search using pgvector."""
+    if not query:
+        return []
+        
+    try:
+        # 1. Generate embedding for query
+        query_vector = embedding_service.generate_embedding(query)
+        
+        # 2. Search using cosine distance (<=> operator in pgvector)
+        async with SessionLocal() as db:
+            # We use the <=> operator for cosine distance. Smaller distance = more similar.
+            result = await db.execute(
+                select(MeetingRecord)
+                .order_by(MeetingRecord.summary_vector.cosine_distance(query_vector))
+                .limit(limit)
+            )
+            meetings = result.scalars().all()
+            
+            return [
+                {
+                    "meetingId": m.meeting_id_short,
+                    "summary": m.summary,
+                    "topics": m.topics,
+                    "created_at": m.created_at.isoformat(),
+                }
+                for m in meetings
+            ]
+    except Exception as e:
+        print(f"Search error: {e}")
+        raise HTTPException(status_code=500, detail="Search failed")

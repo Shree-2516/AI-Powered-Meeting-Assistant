@@ -9,8 +9,6 @@ BACKEND_URL = "http://localhost:8000"
 def _preferred_backend():
     if os.getenv("USE_GROQ", "false").lower() == "true" and os.getenv("GROQ_API_KEY", "").strip():
         return "groq", f"Groq Whisper ({os.getenv('GROQ_SPEECH_MODEL', 'whisper-large-v3-turbo')})"
-    if os.getenv("USE_OPENAI", "false").lower() == "true" and os.getenv("OPENAI_API_KEY", "").strip():
-        return "openai", "OpenAI Whisper"
     return "local", f"Local Whisper ({os.getenv('WHISPER_MODEL', 'base')})"
 
 @app.route("/")

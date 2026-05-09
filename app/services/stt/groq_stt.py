@@ -46,7 +46,6 @@ def transcribe(audio_bytes: bytes, filename: str) -> str:
         transcript = client.audio.transcriptions.create(
             file=(filename, audio_file, _get_mime_type(filename)),
             model=settings.GROQ_SPEECH_MODEL,
-            language="en",
             temperature=0.0  # For consistency
         )
         

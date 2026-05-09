@@ -1,12 +1,11 @@
 from app.core.settings import settings
-from app.services.summary import local_summary, openai_summary, groq_summary
+from app.services.summary import local_summary, groq_summary
 
 def summarize(text: str) -> str:
     """
     Auto-selects summary service based on settings priority:
     1. Groq (FREE, FAST, HIGH QUALITY) ✨
-    2. OpenAI
-    3. Local HuggingFace
+    2. Local HuggingFace
     
     Returns summary text
     """
@@ -19,15 +18,6 @@ def summarize(text: str) -> str:
             return summary
         except Exception as e:
             print(f"[SummaryFactory] ⚠ Groq failed: {e}. Falling back...")
-    
-    # Try OpenAI second
-    if settings.use_openai():
-        print("[SummaryFactory] Using OpenAI")
-        try:
-            summary = openai_summary.summarize(text)
-            return summary
-        except Exception as e:
-            print(f"[SummaryFactory] ⚠ OpenAI failed: {e}. Falling back...")
     
     # Fallback to local HuggingFace
     print("[SummaryFactory] Using Local HuggingFace")

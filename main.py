@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
+from app.core.database import init_db
+from contextlib import asynccontextmanager
 import nltk
 
 def download_nltk_data():
@@ -14,10 +16,23 @@ def download_nltk_data():
 
 download_nltk_data()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    print("[Main] Initializing database...")
+    try:
+        await init_db()
+    except Exception as e:
+        print(f"[Main] Database initialization failed: {e}")
+        print("[Main] App will continue but DB-dependent features might fail.")
+    yield
+    # Shutdown logic (if any)
+
 app = FastAPI(
     title="Meeting Notes AI Backend",
-    description="Hybrid AI backend — local models + optional OpenAI",
-    version="1.0.0"
+    description="Hybrid AI backend — Groq LPU + local models",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
