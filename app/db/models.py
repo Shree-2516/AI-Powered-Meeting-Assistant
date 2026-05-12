@@ -1,14 +1,14 @@
 from sqlalchemy import Column, String, Text, JSON, DateTime, Integer
 from sqlalchemy.sql import func
-from pgvector.sqlalchemy import Vector
-from app.core.database import Base
+# from pgvector.sqlalchemy import Vector
+from app.db.base_class import Base
 import uuid
 
 class MeetingRecord(Base):
     __tablename__ = "meetings"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    meeting_id_short = Column(String(20), index=True)  # The 8-char ID shown in UI
+    meeting_id_short = Column(String(50), index=True, unique=True)  # The 8-char ID shown in UI
     
     # Content
     transcription = Column(Text, nullable=False)
@@ -21,12 +21,13 @@ class MeetingRecord(Base):
     topics = Column(JSON, nullable=True)
     
     # Metadata
-    mode = Column(String(20))
-    speech_model = Column(String(50))
-    insights_model = Column(String(50))
+    mode = Column(String(50))
+    speech_model = Column(String(255))
+    insights_model = Column(String(255))
     
     # Vector for Semantic Search (384 dimensions for all-MiniLM-L6-v2)
-    summary_vector = Column(Vector(384), nullable=True)
+    # summary_vector = Column(Vector(384), nullable=True)
+    summary_vector = Column(JSON, nullable=True)  # Store as JSON for now if pgvector is missing
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

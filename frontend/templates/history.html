@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meeting History - Meeting Notes AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+  <div class="page-wrapper">
+
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo" style="text-decoration: none;">
+          <div class="logo-icon">M</div>
+          <span class="logo-text">Meeting Notes AI</span>
+        </a>
+        <nav class="nav">
+          <a href="/" class="nav-link">New Meeting</a>
+          <a href="/history" class="nav-link active">History</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <div class="hero" style="margin-bottom: 2rem;">
+        <h1 class="hero-title">Meeting History</h1>
+        <p class="hero-sub">Review and search your past analyzed meetings.</p>
+      </div>
+
+      {% if history %}
+      <div class="history-list">
+        {% for meeting in history %}
+        <div class="history-card" onclick="window.location.href='/meeting/{{ meeting.meetingId }}'">
+          <div class="history-card-header">
+            <span class="meeting-id">#{{ meeting.meetingId }}</span>
+            <span class="meeting-date">{{ meeting.created_at.split('T')[0] }}</span>
+          </div>
+          <div class="history-card-body">
+            <p class="meeting-summary">{{ meeting.summary[:200] }}...</p>
+            <div class="meeting-topics">
+              {% for topic in meeting.topics[:3] %}
+              <span class="tag">{{ topic }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="history-card-footer">
+            <span class="btn-text">View Details →</span>
+            <form action="/delete-meeting/{{ meeting.meetingId }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this meeting?');">
+              <button type="submit" class="btn-delete" onclick="event.stopPropagation();">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <h3>No meetings found</h3>
+        <p>You haven't analyzed any meetings yet. Start by uploading an audio file.</p>
+        <a href="/" class="btn-primary" style="display: inline-block; text-decoration: none; margin-top: 1rem;">Upload Meeting</a>
+      </div>
+      {% endif %}
+
+    </main>
+
+    <footer class="footer">
+      <p>Meeting Notes AI &mdash; Hybrid local + cloud models.</p>
+    </footer>
+
+  </div>
+
+  <style>
+    .nav {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--primary);
+    }
+    
+    .history-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    
+    .history-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .history-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+      border-color: var(--primary-light);
+    }
+    
+    .history-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .meeting-id {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+    
+    .meeting-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    
+    .meeting-summary {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .meeting-topics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .history-card-footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .btn-text {
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .btn-delete {
+      background: none;
+      border: 1px solid #ff4d4d;
+      color: #ff4d4d;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #ff4d4d;
+      color: white;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--card-bg);
+      border-radius: 1rem;
+      border: 1px dashed var(--border);
+    }
+    
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+
+</body>
+</html>

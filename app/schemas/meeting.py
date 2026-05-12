@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 class SentimentResult(BaseModel):
     label: str           # POSITIVE / NEGATIVE / NEUTRAL
@@ -17,4 +17,14 @@ class MeetingResponse(BaseModel):
     topics: List[str]
     speechModel: str
     insightsModel: str
+    createdAt: Optional[str] = None
     error: Optional[str] = None
+
+class MeetingHistory(BaseModel):
+    meetingId: str
+    summary: Optional[str]
+    topics: List[str]
+    created_at: str
+
+    class Config:
+        from_attributes = True

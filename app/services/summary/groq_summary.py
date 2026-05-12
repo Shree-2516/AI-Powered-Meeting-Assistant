@@ -1,6 +1,6 @@
 import json
 from groq import Groq
-from app.core.settings import settings
+from app.core.config import settings
 
 # Initialize Groq client
 _client = None

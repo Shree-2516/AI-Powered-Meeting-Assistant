@@ -4,19 +4,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
+    # API metadata
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Meeting Notes AI"
+
     # Local Whisper (optional)
     WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "base")
     
     # Local Summary (optional)
     SUMMARY_MODEL: str = os.getenv("SUMMARY_MODEL", "facebook/bart-large-cnn")
     
-    # ✨ GROQ - NEW CONFIGURATION
+    # ✨ GROQ - CONFIGURATION
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "").strip()
     USE_GROQ: bool = os.getenv("USE_GROQ", "false").lower() == "true"
     GROQ_SPEECH_MODEL: str = os.getenv("GROQ_SPEECH_MODEL", "whisper-large-v3-turbo")
     GROQ_LLM_MODEL: str = os.getenv("GROQ_LLM_MODEL", "mixtral-8x7b-32768")
     
-    # 🗄️ DATABASE - NEW CONFIGURATION
+    # 🗄️ DATABASE - CONFIGURATION
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/meeting_db")
     EMBEDDING_MODEL_NAME: str = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
 

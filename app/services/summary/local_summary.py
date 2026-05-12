@@ -3,7 +3,7 @@ import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from collections import Counter
-from app.core.settings import settings
+from app.core.config import settings
 
 
 _summarizer = None

@@ -1,6 +1,6 @@
 import json
 import re
-from app.core.settings import settings
+from app.core.config import settings
 from groq import Groq
 
 

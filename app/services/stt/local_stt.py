@@ -1,7 +1,7 @@
 import whisper
 import tempfile
 import os
-from app.core.settings import settings
+from app.core.config import settings
 
 # Load model once at module level (avoids reloading on every request)
 _model = None

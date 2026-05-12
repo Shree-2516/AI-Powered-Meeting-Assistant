@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from app.core.settings import settings
+from app.core.config import settings
 import numpy as np
 
 _model = None

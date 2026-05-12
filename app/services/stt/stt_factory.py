@@ -1,4 +1,4 @@
-from app.core.settings import settings
+from app.core.config import settings
 from app.services.stt import local_stt, groq_stt
 
 def transcribe(audio_bytes: bytes, filename: str) -> tuple[str, str]:
